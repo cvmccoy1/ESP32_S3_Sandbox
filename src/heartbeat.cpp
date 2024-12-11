@@ -1,11 +1,27 @@
 #include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
 #include "heartbeat.h"
+
+// Define the pin connected to the RGB LED
+#define LED_PIN 48
+// Define the number of LEDs (1 for the onboard RGB LED)
+#define NUM_LEDS 1
+
+// Create an instance of the NeoPixel library
+Adafruit_NeoPixel rgbLED(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// Define the LED color state 
+int colorState = 0;
+
+esp_timer_handle_t timer = nullptr;
 
 Heartbeat::Heartbeat()
 {
     // Initialize the Heartbeat LED pin as an output
-    pinMode(LED_BUILTIN, OUTPUT);
-    heartbeatFlag = LOW;
+    // Initialize the NeoPixel library
+    rgbLED.begin();
+    rgbLED.show(); // Initialize all LEDs to 'off'
+    colorState = 0;
     timer = nullptr;
 }
 
@@ -24,11 +40,16 @@ Heartbeat& Heartbeat::Instance()
 // Timer interrupt handler function
 void IRAM_ATTR onTimer(void* arg) 
 {
-    bool* ledState = (bool *)arg;
-    *ledState = !(*ledState);
-    // Set the Heartbeat LED state
-    digitalWrite(LED_BUILTIN, *ledState);
-    //Serial.printf("One second has passed!  ledState = %s (%d)\n", *ledState ? "HIGH" : "LOW", *ledState);
+    static constexpr std::array<int, 3> colors = { 0xFF0000, 0x00FF00, 0x0000FF };   // { Red, Green, Blue }
+
+    if (++colorState >= colors.size())
+        colorState = 0;
+
+    int color = colors[colorState];
+    //Serial.printf("One second has passed!  colorState = %d; color = 0x%06X\n", colorState, color);
+    
+    rgbLED.setPixelColor(0, rgbLED.Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF ));
+    rgbLED.show();
 }
 
 void Heartbeat::StartHeartbeatLED()
@@ -38,7 +59,7 @@ void Heartbeat::StartHeartbeatLED()
     esp_timer_create_args_t timer_args =
     {
         .callback = onTimer,
-        .arg = (void *)&heartbeatFlag,
+        .arg = (void *)0,
         .name = "one_second_timer"
     };
     // Initialize the timer

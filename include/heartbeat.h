@@ -13,11 +13,6 @@ public:
     void StopHeartbeatLED();
 
 private:
-    // Define the LED state flag 
-    bool heartbeatFlag;
-
-    esp_timer_handle_t timer;
-
     // Private constructor/destructor ensures that this Singleton class can only be created/destroyed inside the class
     Heartbeat();
     ~Heartbeat();
