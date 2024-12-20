@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
+#include "log.h"
 #include "heartbeat.h"
 
 // Define the pin connected to the RGB LED
@@ -46,7 +47,7 @@ void IRAM_ATTR onTimer(void* arg)
         colorState = 0;
 
     int color = colors[colorState];
-    //Serial.printf("One second has passed!  colorState = %d; color = 0x%06X\n", colorState, color);
+    //Slog.printf(PSTR("One second has passed!  colorState = %d; color = 0x%06X\n"), colorState, color);
     
     rgbLED.setPixelColor(0, rgbLED.Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF ));
     rgbLED.show();

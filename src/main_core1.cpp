@@ -1,6 +1,7 @@
 // Include Arduino Framework Library
 #include <Arduino.h>
 
+#include "log.h"
 #include "heartbeat.h"
 
 // Declare a handle for the task running on Core 1
@@ -17,7 +18,7 @@ void StartSecondaryCore()
   // The task will use the secondaryTask function and run on Core 0
   xTaskCreatePinnedToCore(
     secondaryTask,       // Task function
-    "SecondaryTask",   // Task name
+    PSTR("SecondaryTask"),   // Task name
     10000,             // Stack size (in words)
     NULL,              // Task parameters
     0,                 // Task priority
@@ -40,12 +41,12 @@ void IRAM_ATTR secondaryTask(void *parameter)
 void setupTask()
 {
   // Print the current core ID
-  Serial.printf("Running Secordary App on core: %d\n", xPortGetCoreID());
+  Slog.printf(PSTR("Running Secordary App on core: %d\n"), xPortGetCoreID());
   Heartbeat::Instance().StartHeartbeatLED();
 }
 
 // Loop Function for Secondary Core - Add Execution code for here
 void loopTask()
 {
-  //Serial.println("Running on Secondary Core");
+  //Slog.println(PSTR("Running on Secondary Core)");
 }

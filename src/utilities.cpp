@@ -4,33 +4,40 @@
 // Include Wire Library for I2C Communications
 #include <Wire.h>
 
+#include "log.h"
+
+const int MB = 1048576;
+const int HALF_MB = MB / 2;
+const int KB = 1024;
+const int HALF_KB = KB / 2;
+
 const char* enumToString(esp_chip_model_t model) {
   switch(model)
   {
-    case CHIP_ESP32:   return "ESP32";
-    case CHIP_ESP32S2: return "ESP32-S2";
-    case CHIP_ESP32S3:  return "ESP32-S3";
-    case CHIP_ESP32C3: return "ESP32-C3";
-    case CHIP_ESP32H2:  return "ESP32-H2";
-    default:    return "Unknown";
+    case CHIP_ESP32:   return PSTR("ESP32");
+    case CHIP_ESP32S2: return PSTR("ESP32-S2");
+    case CHIP_ESP32S3:  return PSTR("ESP32-S3");
+    case CHIP_ESP32C3: return PSTR("ESP32-C3");
+    case CHIP_ESP32H2:  return PSTR("ESP32-H2");
+    default:    return PSTR("Unknown");
   }
 }
 
 void reportChipFeatures(uint32_t features)
 {
-  Serial.printf("Features:\n");
+  Slog.printf(PSTR("Features:\n"));
   if (CHIP_FEATURE_EMB_FLASH & features)
-    Serial.printf("  Embedded Flash Memory\n");
+    Slog.printf(PSTR("  Embedded Flash Memory\n"));
   if (CHIP_FEATURE_WIFI_BGN & features)
-    Serial.printf("  2.4GHz WiFi\n"); 
+    Slog.printf(PSTR("  2.4GHz WiFi\n")); 
   if (CHIP_FEATURE_BLE & features)
-    Serial.printf("  Bluetooth LE\n");
+    Slog.printf(PSTR("  Bluetooth LE\n"));
   if (CHIP_FEATURE_BT & features)
-    Serial.printf("  Bluetooth Classic\n");
+    Slog.printf(PSTR("  Bluetooth Classic\n"));
   if (CHIP_FEATURE_IEEE802154 & features)
-    Serial.printf("  IEEE 802.15.4 (Low power, low data-rate wireless communication)\n");             
+    Slog.printf(PSTR("  IEEE 802.15.4 (Low power, low data-rate wireless communication)\n"));             
   if (CHIP_FEATURE_EMB_PSRAM & features)
-    Serial.printf("  Embedded PSRAM\n");    
+    Slog.printf(PSTR("  Embedded PSRAM\n"));    
 }
 
 void reportPSRAMsize()
@@ -38,19 +45,14 @@ void reportPSRAMsize()
     // Check if PSRAM is available
   if (esp_spiram_is_initialized())
   {
-    Serial.printf("PSRAM Size: %dMB\n", esp_spiram_get_size() / (1024 * 1024));
+    Slog.printf(PSTR("PSRAM Size: %dMB\n"), esp_spiram_get_size() / MB);
   }
   else
   {
-    Serial.printf("No PSRAM available\n");
+    Slog.printf(PSTR("No PSRAM available\n"));
   }
 
 }
-
-const int MB = 1048576;
-const int HALF_MB = MB / 2;
-const int KB = 1024;
-const int HALF_KB = KB / 2;
 
 void ReportChipInfo()
 {
@@ -59,27 +61,27 @@ void ReportChipInfo()
   delay(1000);
   esp_chip_info(&chip_info);
 
-  Serial.printf("\nESP32 Chip Information:\n");
-  Serial.printf("-----------------------\n");
-  Serial.printf("Chip model: %s\n", enumToString(chip_info.model));
-  Serial.printf("Number of cores: %d\n", chip_info.cores);
-  Serial.printf("Revision: %d\n", chip_info.revision);
-  Serial.printf("Embedded flash: %dMB\n", (spi_flash_get_chip_size() + HALF_MB) / MB);
-  Serial.printf("Total heap size: %dKB\n", (ESP.getHeapSize() + HALF_KB) / KB);
-  Serial.printf("Free heap size: %dKB\n", (ESP.getFreeHeap() + HALF_KB) / KB);
-  Serial.printf("Largest free block: %dKB\n", (ESP.getMaxAllocHeap() + HALF_KB) / KB);
+  Slog.printf(PSTR("\nESP32 Chip Information:\n"));
+  Slog.printf(PSTR("-----------------------\n"));
+  Slog.printf(PSTR("Chip model: %s\n"), enumToString(chip_info.model));
+  Slog.printf(PSTR("Number of cores: %d\n"), chip_info.cores);
+  Slog.printf(PSTR("Revision: %d\n"), chip_info.revision);
+  Slog.printf(PSTR("Embedded flash: %dMB\n"), (spi_flash_get_chip_size() + HALF_MB) / MB);
+  Slog.printf(PSTR("Total heap size: %dKB\n"), (ESP.getHeapSize() + HALF_KB) / KB);
+  Slog.printf(PSTR("Free heap size: %dKB\n"), (ESP.getFreeHeap() + HALF_KB) / KB);
+  Slog.printf(PSTR("Largest free block: %dKB\n"), (ESP.getMaxAllocHeap() + HALF_KB) / KB);
   if (psramFound())
   {
-    Serial.printf("Total PSRAM size: %dMB\n", (ESP.getPsramSize() + MB) / MB);
-    Serial.printf("Free PSRAM size: %dKB\n", (ESP.getFreePsram() + KB) / KB);
+    Slog.printf(PSTR("Total PSRAM size: %dMB\n"), (ESP.getPsramSize() + MB) / MB);
+    Slog.printf(PSTR("Free PSRAM size: %dKB\n"), (ESP.getFreePsram() + KB) / KB);
   }
   else
   {
-    Serial.printf("PSRAM is not available\n");
+    Slog.printf(PSTR("PSRAM is not available\n"));
   }
   reportChipFeatures(chip_info.features);
   #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-  Serial.printf("Cache Log Bug: %s\n\n", soc_has_cache_lock_bug() ? "Yes" : "No");
+  Slog.printf(PSTR("Cache Log Bug: %s\n\n"), soc_has_cache_lock_bug() ? "Yes" : "No");
   #endif
 }
 
@@ -87,33 +89,33 @@ void FindI2CDevices()
 {
   byte error, address;
   int nDevices;
-  Serial.println("\nI2C Scanner");
-  Serial.println("Scanning...");
+  Slog.println(PSTR("\nI2C Scanner"));
+  Slog.println(PSTR("Scanning..."));
   nDevices = 0;
   for(address = 1; address < 127; address++ ) {
     Wire.beginTransmission(address);
     error = Wire.endTransmission();
     if (error == 0) {
-      Serial.print("I2C device found at address 0x");
+      Slog.print(PSTR("I2C device found at address 0x"));
       if (address<16) {
-        Serial.print("0");
+        Slog.print(PSTR("0"));
       }
-      Serial.println(address,HEX);
+      Slog.println(address,HEX);
       nDevices++;
     }
     else if (error==4) {
-      Serial.print("Unknow error at address 0x");
+      Slog.print(PSTR("Unknow error at address 0x"));
       if (address<16) {
-        Serial.print("0");
+        Slog.print(PSTR("0"));
       }
-      Serial.println(address,HEX);
+      Slog.println(address,HEX);
     }    
   }
   if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
+    Slog.println(PSTR("No I2C devices found\n"));
   }
   else {
-    Serial.println("done\n");
+    Slog.println(PSTR("done\n"));
   }     
 
    delay(5000);     
