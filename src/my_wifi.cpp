@@ -24,7 +24,6 @@ void SetupWifi()
 
   //WiFiManager local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wm;
-
    
   // Reset settings - wipe stored credentials for testing - these are stored by the esp library
   //wm.resetSettings();

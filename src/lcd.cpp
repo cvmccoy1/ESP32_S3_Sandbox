@@ -35,8 +35,20 @@ void UpdateIpAddress(const char* ipAddr)
   ipAddress = ipAddr;
 }
 
+#define WIFI_STATUS_STATES 7
+const std::string wifiStatusString[WIFI_STATUS_STATES] =
+{
+  PSTR("IDLE"),
+  PSTR("NO SSID"),
+  PSTR("SCAN COMPLETED"),
+  PSTR("CONNECTED"),
+  PSTR("CONNECT FAILED"),
+  PSTR("CONNECTION LOST"),
+  PSTR("DISCONNECTED")
+};
+
 // Function to update the LCD display
-void UpdateDisplay()
+void UpdateDisplay(int rpm)
 { 
   // Clear the display
   lcd.clear();
@@ -45,16 +57,17 @@ void UpdateDisplay()
   lcd.setCursor(0, 0);
   lcd.printf(PSTR("IP: %s"), WiFi.localIP().toString().c_str());
 
-  for (int n = 1; n < lcdRows; n++)
-  { 
-    static int counter = 0; 
-    // Print on LCD
-    lcd.setCursor(0, n);
-    lcd.printf(PSTR("Test Row %d: %8d"), n, ++counter);
+  lcd.setCursor(0, 1);
+  wl_status_t status = WiFi.status();
+  Slog.printf(PSTR("WiFi %s (%d)\n"), status < WIFI_STATUS_STATES ? wifiStatusString[status].c_str() : PSTR("UNKNOWN"), status);
+  lcd.printf(PSTR("WiFi %s"), status < WIFI_STATUS_STATES ? wifiStatusString[status].c_str() : PSTR("UNKNOWN"));
 
-    // Print to Serial Monitor   
-    Slog.printf(PSTR("Test Row %d: %8d"), n, counter);
-    Slog.print(PSTR("\t"));
-  }
-  Slog.print(PSTR("\n"));
+  lcd.setCursor(0, 2);
+  Slog.printf(PSTR("Fan RPM: %d\n"), rpm);
+  lcd.printf(PSTR("Fan RPM: %d"), rpm);
+
+  static int counter = 0; 
+  lcd.setCursor(0, 3);
+  Slog.printf(PSTR("Counter: %d\n"), counter);
+  lcd.printf(PSTR("Counter: %d"), ++counter);
 }
