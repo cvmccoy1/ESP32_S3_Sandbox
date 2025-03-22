@@ -9,4 +9,4 @@ const int lcdRows = 4;
 
 void SetupDisplay();
 void UpdateIpAddress(const char* ipAddr);
-void UpdateDisplay(int rpm);
+void UpdateDisplay(int rpm, int dutyCycle);

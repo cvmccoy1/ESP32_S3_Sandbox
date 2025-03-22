@@ -120,3 +120,16 @@ void FindI2CDevices()
 
    delay(5000);     
 }
+
+String SecondsToHHMMSS(unsigned long seconds)
+{
+  unsigned long days = seconds / 86400;
+  unsigned long hours = (seconds % 86400) / 3600;
+  unsigned long minutes = (seconds % 3600) / 60;
+  unsigned long sec = seconds % 60;
+  
+  char buffer[12]; // DD:HH:MM:SS is 11 chars + null terminator
+  snprintf(buffer, sizeof(buffer), "%02lu:%02lu:%02lu:%02lu", days, hours, minutes, sec);
+  
+  return String(buffer);
+}

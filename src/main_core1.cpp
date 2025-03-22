@@ -27,7 +27,7 @@ void StartSecondaryCore()
   );
 }
 
-// Function that will run on Core 1
+// Function that will run on Core 0
 void IRAM_ATTR secondaryTask(void *parameter)
 {
   setupTask();
