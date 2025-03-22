@@ -14,7 +14,7 @@ Adafruit_NeoPixel rgbLED(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 // Define the LED color state 
 int colorState = 0;
 
-esp_timer_handle_t timer = nullptr;
+esp_timer_handle_t heatbeat_timer = nullptr;
 
 Heartbeat::Heartbeat()
 {
@@ -23,7 +23,7 @@ Heartbeat::Heartbeat()
     rgbLED.begin();
     rgbLED.show(); // Initialize all LEDs to 'off'
     colorState = 0;
-    timer = nullptr;
+    heatbeat_timer = nullptr;
 }
 
 Heartbeat::~Heartbeat()
@@ -39,7 +39,7 @@ Heartbeat& Heartbeat::Instance()
 
 
 // Timer interrupt handler function
-void IRAM_ATTR onTimer(void* arg) 
+void IRAM_ATTR onHeatbeatTimer(void* arg) 
 {
     static constexpr std::array<int, 3> colors = { 0xFF0000, 0x00FF00, 0x0000FF };   // { Red, Green, Blue }
 
@@ -59,22 +59,22 @@ void Heartbeat::StartHeartbeatLED()
     // Create an ESP timer that triggers every 1 second (1000000 microseconds)
     esp_timer_create_args_t timer_args =
     {
-        .callback = onTimer,
+        .callback = onHeatbeatTimer,
         .arg = (void *)0,
-        .name = "one_second_timer"
+        .name = "heartbeat_timer"
     };
     // Initialize the timer
-    esp_timer_create(&timer_args, &timer);
+    esp_timer_create(&timer_args, &heatbeat_timer);
 
     // Start the timer to trigger every 1 second (1,000,000 microseconds)
-    esp_timer_start_periodic(timer, 1000000); // 1 second interval
+    esp_timer_start_periodic(heatbeat_timer, 1000000); // 1 second interval
 }
 
 void Heartbeat::StopHeartbeatLED()
 {
-    if (timer != nullptr)
+    if (heatbeat_timer != nullptr)
     {
-        esp_timer_stop(timer);
-        timer = nullptr;
+        esp_timer_stop(heatbeat_timer);
+        heatbeat_timer = nullptr;
     }
 }

@@ -4,24 +4,35 @@
 #include "main_core1.h"
 #include "my_wifi.h"
 #include "lcd.h"
+#include "fan.h"
 #include "utilities.h"
 
-#define FAN_TACH_PIN 4  // Connect to the fan's tachometer pin (Yellow wire)
-#define FAN_PWM_PIN 5   // Connect to the fan's PWM pin (Blue wire)
-#define PWM_CHANNEL 0   // LEDC channel
-#define PWM_FREQ 25000  // 25 kHz frequency
-#define PWM_RES 8       // 8-bit resolution (0-255)
-int dutyCycle = 255;  // Fan ON at startup
-int dutyCycleIncrement = 5;
-volatile int pulseCount = 0;  // Tachometer pulse counter
-unsigned long lastRPMCheck = 0;
-int rpm = 0;
+#define MAX_FAN_DUTY_CYCLE 100
+#define MIN_FAN_DUTY_CYCLE 0
+#define FAN_DUTY_CYCLE_INCREMENT 2
 
-// Interrupt for tachometer signal
-void IRAM_ATTR tachInterrupt() 
+esp_timer_handle_t main_loop_timer = nullptr;
+volatile bool updateFlag = false; // Flag to indicate timer fired
+
+// Timer interrupt handler function
+void IRAM_ATTR onMainLoopTimer(void* arg) {
+  updateFlag = true;
+}
+
+void setupMainLoopTimer()
 {
-  pulseCount++;
-  //Slog.printf(PSTR("tachInterrupt: pulseCount = %d\n"), pulseCount);
+  // Create a one-second timer for updating the display
+  // Create an ESP timer that triggers every 1 second (1000000 microseconds)
+  esp_timer_create_args_t timer_args ={
+    .callback = onMainLoopTimer,
+    .arg = (void *)0,
+    .name = "main_loop_timer" 
+  };
+  // Initialize the timer
+  esp_timer_create(&timer_args, &main_loop_timer);
+
+  // Start the timer to trigger every 1 second (1,000,000 microseconds)
+  esp_timer_start_periodic(main_loop_timer, 1000000); // 1 second interval
 }
 
 void setup()
@@ -37,50 +48,33 @@ void setup()
   ReportChipInfo();
 
   SetupDisplay();
+
+  SetupFan();
   
   SetupWifi();
 
   StartSecondaryCore();  // The Heartbeat LED runs on the Secondary Core so that hangs/crashes on Main App Core don't affect it
-  
 
-  // Configure the fan PWM pin
-  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
-  ledcAttachPin(FAN_PWM_PIN, PWM_CHANNEL);
-  
-  // Set initial speed (e.g., 50% duty cycle)
-  ledcWrite(PWM_CHANNEL, dutyCycle); 
-
-  // Set up tachometer input
-  pinMode(FAN_TACH_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(FAN_TACH_PIN), tachInterrupt, FALLING);
+  setupMainLoopTimer();
 }
 
 void loop()
-{
-  unsigned long now = millis();  
-    
-  // Measure RPM every second
-  if (now - lastRPMCheck >= 1000) {
-    noInterrupts();
-    int count = pulseCount;
-    pulseCount = 0;
-    interrupts();
-        
-    // RPM calculation (3-pin fans usually output 2 pulses per revolution)
-    rpm = (count * 30);  // (count / 2) * 60        
-    lastRPMCheck = now;
+{ 
+  static int dutyCycle = MIN_FAN_DUTY_CYCLE;
+  static int dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT;   
 
-    UpdateDisplay(rpm, dutyCycle);
+  if (updateFlag) {
+    updateFlag = false;
+    UpdateDisplay(GetFanRPM(), dutyCycle);
 
     dutyCycle += dutyCycleIncrement;
-    if (dutyCycle > 255) {
-      dutyCycleIncrement = -5;
-      dutyCycle = 255;  // Fan at full speed
-    } else if (dutyCycle < 0) {
-      dutyCycleIncrement = 5; // Fan at minimum speed   
-      dutyCycle = 0;
+    if (dutyCycle > MAX_FAN_DUTY_CYCLE) {
+      dutyCycleIncrement = -FAN_DUTY_CYCLE_INCREMENT;
+      dutyCycle = MAX_FAN_DUTY_CYCLE;  // Fan at full speed
+    } else if (dutyCycle < MIN_FAN_DUTY_CYCLE) {
+      dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT; // Fan at minimum speed   
+      dutyCycle = MIN_FAN_DUTY_CYCLE;
     }
-    ledcWrite(PWM_CHANNEL, dutyCycle);  // Set the fan speed
-    //delay(1000);
+    SetFanDutyCycle(dutyCycle);
   }
 }

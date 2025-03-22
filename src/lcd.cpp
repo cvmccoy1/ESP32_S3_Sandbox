@@ -71,9 +71,8 @@ void UpdateDisplay(int rpm, int dutyCycle)
   lcd.printf(PSTR("WiFi %s"), status < WIFI_STATUS_STATES ? wifiStatusString[status].c_str() : PSTR("UNKNOWN"));
 
   lcd.setCursor(0, 2);
-  int dutyCyclePercentage = (dutyCycle * 100) / 255;
-  Slog.printf(PSTR("Fan RPM: %d (%d%%)\n"), rpm, dutyCyclePercentage);
-  lcd.printf(PSTR("Fan RPM: %d (%d%%)"), rpm , dutyCyclePercentage);
+  Slog.printf(PSTR("Fan RPM: %d (%d%%)\n"), rpm, dutyCycle);
+  lcd.printf(PSTR("Fan RPM: %d (%d%%)"), rpm , dutyCycle);
 
   static unsigned long counter = 0; 
   lcd.setCursor(0, 3);
