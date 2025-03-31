@@ -44,7 +44,7 @@ void SetupFan()
     ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
     ledcAttachPin(FAN_PWM_PIN, PWM_CHANNEL);
   
-    // Set initial speed to 100%
+    // Set initial fan speed to off (0%)
     SetFanDutyCycle(0);
 
     // Configure the PCNT peripheral

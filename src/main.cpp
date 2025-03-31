@@ -5,6 +5,8 @@
 #include "my_wifi.h"
 #include "lcd.h"
 #include "fan.h"
+#include "thermo.h"
+#include "rotary.h"
 #include "utilities.h"
 
 #define MAX_FAN_DUTY_CYCLE 100
@@ -53,6 +55,8 @@ void setup()
   
   SetupWifi();
 
+  SetupRotaryEncoder();
+
   StartSecondaryCore();  // The Heartbeat LED runs on the Secondary Core so that hangs/crashes on Main App Core don't affect it
 
   setupMainLoopTimer();
@@ -65,7 +69,11 @@ void loop()
 
   if (updateFlag) {
     updateFlag = false;
-    UpdateDisplay(GetFanRPM(), dutyCycle);
+    int rpm = GetFanRPM();
+    float temperature1 = GetThermocoupleTemperature(THERMOCOUPLE_1);
+    //float temperature2 = GetThermocoupleTemperature(THERMOCOUPLE_2);
+    long rotaryValue = GetRotaryEncoderValue(); // Read the rotary encoder value  
+    UpdateDisplay(rpm, dutyCycle, temperature1, 0.0, rotaryValue); // No second thermocouple for now
 
     dutyCycle += dutyCycleIncrement;
     if (dutyCycle > MAX_FAN_DUTY_CYCLE) {
@@ -76,5 +84,6 @@ void loop()
       dutyCycle = MIN_FAN_DUTY_CYCLE;
     }
     SetFanDutyCycle(dutyCycle);
+    //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
   }
 }

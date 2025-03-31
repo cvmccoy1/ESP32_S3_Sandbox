@@ -47,7 +47,7 @@ void IRAM_ATTR onHeatbeatTimer(void* arg)
         colorState = 0;
 
     int color = colors[colorState];
-    Slog.printf(PSTR("One second has passed!  colorState = %d; color = 0x%06X\n"), colorState, color);
+    //Slog.printf(PSTR("One second has passed!  colorState = %d; color = 0x%06X\r\n"), colorState, color);
     
     rgbLED.setPixelColor(0, rgbLED.Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF ));
     rgbLED.show();
