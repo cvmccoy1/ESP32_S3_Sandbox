@@ -7,6 +7,7 @@
 #include "fan.h"
 #include "thermo.h"
 #include "rotary.h"
+#include "tft_lcd.h"
 #include "utilities.h"
 
 #define MAX_FAN_DUTY_CYCLE 100
@@ -49,17 +50,21 @@ void setup()
 
   ReportChipInfo();
 
+  Slog.printf("SetupDisplay()\r\n");
   SetupDisplay();
 
+  //SetupTFT();
+  Slog.printf("SetupFan()\r\n");
   SetupFan();
-  
+  Slog.printf("SetupWifi()\r\n");
   SetupWifi();
-
+  Slog.printf("SetupRotaryEncoder()\r\n");
   SetupRotaryEncoder();
-
+  Slog.printf("SetupSecondaryCore()\r\n");
   StartSecondaryCore();  // The Heartbeat LED runs on the Secondary Core so that hangs/crashes on Main App Core don't affect it
-
+  Slog.printf("SetupMainLoopTimer()\r\n");
   setupMainLoopTimer();
+  Slog.printf("Setup() done\r\n");
 }
 
 void loop()
@@ -85,5 +90,6 @@ void loop()
     }
     SetFanDutyCycle(dutyCycle);
     //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
+    //UpdateTFT();
   }
 }

@@ -1,0 +1,4 @@
+I'm using ESP32RotaryEncoder, the library by Matthew Clark location on Github (https://github.com/MaffooClock/ESP32RotaryEncoder).
+Unfortunately, I found a bug that would occasionally cause the code to crash when pressing the pushbutton.
+So, I copied the ESP32RotaryEncoder’s source code into the private library section of this project and fixed the defect in the code.
+I’ve informed Matthew of this issue and should he fix it on Github, I’ll go back to using his library.
