@@ -19,6 +19,7 @@ Updated by Bodmer for variable meter size
 #include <Arduino.h>
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
+#include "log.h"
 
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
@@ -69,10 +70,10 @@ void analogMeter()
     int y3 = sy2 * M_SIZE*100 + M_SIZE*140;
 
     // Yellow zone limits
-    //if (i >= -50 && i < 0) {
-    //  tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_YELLOW);
-    //  tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_YELLOW);
-    //}
+    if (i >= -50 && i < 0) {
+      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_YELLOW);
+      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_YELLOW);
+    }
 
     // Green zone limits
     if (i >= 0 && i < 25) {
@@ -82,8 +83,8 @@ void analogMeter()
 
     // Orange zone limits
     if (i >= 25 && i < 50) {
-      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_ORANGE);
-      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_ORANGE);
+      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_RED);
+      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_RED);
     }
 
     // Short scale tick length
@@ -187,19 +188,31 @@ void plotNeedle(int value, byte ms_delay)
   }
 }
 
+
 void SetupTFT(void) {
-    tft.init();
-    tft.setRotation(1);
-    tft.fillScreen(TFT_BLACK);
-  
-    analogMeter(); // Draw analogue meter
+  Slog.printf("tft.init()\r\n");
+  tft.init();
+
+  Slog.printf("tft.setWindow()\r\n");
+  tft.setWindow(0, 0, 240, 320); // Set window size to full screen
+
+  Slog.printf("tft.setRotation()\r\n");
+  tft.setRotation(1); // Set rotation to 1 for landscape mode
+
+  // Clear the screen
+  Slog.printf("tft.fillScreen()\r\n");
+  tft.fillScreen(TFT_BLACK);
+ 
+  Slog.printf("analogMeter()\r\n");
+  analogMeter(); // Draw analogue meter
 }
   
   
 void UpdateTFT() {
-      // Create a Sine wave for testing
-      d += 4; if (d >= 360) d = 0;
-      value[0] = 50 + 50 * sin((d + 0) * 0.0174532925);
+
+  // Create a Sine wave for testing
+  d += 4; if (d >= 360) d = 0;
+  value[0] = 50 + 50 * sin((d + 0) * 0.0174532925);
   
-      plotNeedle(value[0], 0); // It takes between 2 and 12ms to replot the needle with zero delay
+  plotNeedle(value[0], 0); // It takes between 2 and 12ms to replot the needle with zero delay
 }

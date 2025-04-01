@@ -4,10 +4,10 @@
 #include "thermo.h"
 #include "log.h"
 
-int thermoDO  = 13;
-int thermoCLK  = 12;
-int thermoCS_1 = 10;
-int thermoCS_2 = 11;
+int thermoDO  = 3;
+int thermoCLK  = 14;
+int thermoCS_1 = 18;
+int thermoCS_2 = 21;
 
 
 MAX6675 thermocouple[2] = { MAX6675(thermoCLK, thermoCS_1, thermoDO),

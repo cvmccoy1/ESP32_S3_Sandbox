@@ -52,8 +52,8 @@ void setup()
 
   Slog.printf("SetupDisplay()\r\n");
   SetupDisplay();
-
-  //SetupTFT();
+  Slog.printf("SetupTFT()\r\n");
+  SetupTFT();
   Slog.printf("SetupFan()\r\n");
   SetupFan();
   Slog.printf("SetupWifi()\r\n");
@@ -89,7 +89,7 @@ void loop()
       dutyCycle = MIN_FAN_DUTY_CYCLE;
     }
     SetFanDutyCycle(dutyCycle);
-    //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
-    //UpdateTFT();
+    Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
+    UpdateTFT();
   }
 }
