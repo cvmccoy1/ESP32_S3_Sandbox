@@ -6,7 +6,7 @@
 #include "my_wifi.h"
 #include "lcd.h"
 
-#define WIFI_LED_PIN   2        //GPIO2
+#define WIFI_LED_PIN   47     // GPIO pin for the Wifi LED
 #define WIFI_LED_OFF   HIGH
 #define WIFI_LED_ON    LOW
 
@@ -20,9 +20,11 @@ void SetupWifi()
   digitalWrite(WIFI_LED_PIN, wifiLedState);     // Initialize WIFI LED in the OFF state 
 
   // Explicitly set wifi mode to station mode: the ESP32 connects to an access point
+  Slog.println(PSTR("[Wifi]: Explicitly set wifi mode to station mode"));
   WiFi.mode(WIFI_STA); 
 
   //WiFiManager local intialization. Once its business is done, there is no need to keep it around
+  Slog.println(PSTR("[Wifi]: WiFiManager local intialization"));
   WiFiManager wm;
    
   // Reset settings - wipe stored credentials for testing - these are stored by the esp library

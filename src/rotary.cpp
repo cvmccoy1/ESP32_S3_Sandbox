@@ -5,7 +5,7 @@
 #include "rotary.h"
 
 
-#define  DI_ENCODER_SW         46   // Pushbutton of the rotary encoder
+#define  DI_ENCODER_SW         18   // Pushbutton of the rotary encoder
 #define  DI_ENCODER_DT         17   // Might be labeled A
 #define  DI_ENCODER_CLK        16   // Might be labeled B
 #define  DI_ENCODER_WRAP       true // Wrap around when turning the knob past the min/max values
