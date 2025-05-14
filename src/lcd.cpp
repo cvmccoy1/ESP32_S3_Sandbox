@@ -72,7 +72,7 @@ void UpdateDisplay(int rpm, int dutyCycle, float temperature, long rotaryValue)
   //Slog.printf(PSTR("WiFi %s (%d)\r\n"), status < WIFI_STATUS_STATES ? wifiStatusString[status].c_str() : PSTR("UNKNOWN"), status);
   //lcd.printf(PSTR("WiFi %s"), status < WIFI_STATUS_STATES ? wifiStatusString[status].c_str() : PSTR("UNKNOWN"));
   //Slog.printf(PSTR("Thermo: %.1f°C\r\n"), temperature);
-  lcd.printf(PSTR("Thermo: %.1f\337C"), temperature);
+  lcd.printf(PSTR("Thermo: %.2f\337C"), temperature);
 
   lcd.setCursor(0, 2);
   //Slog.printf(PSTR("Fan RPM: %d (%d%%)\r\n"), rpm, dutyCycle);
@@ -80,7 +80,7 @@ void UpdateDisplay(int rpm, int dutyCycle, float temperature, long rotaryValue)
 
   static unsigned long counter = 0; 
   lcd.setCursor(0, 3);
-  String uptime = SecondsToHHMMSS(++counter/4);
+  String uptime = SecondsToHHMMSS(++counter/2);
   //Slog.printf(PSTR("Up Time: %s\r\n"), uptime);
   lcd.printf(PSTR("Up Time: %s"), uptime);
 }

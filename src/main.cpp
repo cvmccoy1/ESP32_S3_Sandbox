@@ -13,12 +13,17 @@
 #include "buzzer.h"
 #include "utilities.h"
 
-#define MAX_FAN_DUTY_CYCLE 100
-#define MIN_FAN_DUTY_CYCLE 0
-#define FAN_DUTY_CYCLE_INCREMENT 2
+#define MAIN_LOOP_INTERVAL 500000      // 1/2 second interval in microseconds
+
+#define MAX_FAN_DUTY_CYCLE        100  // In Percent
+#define MIN_FAN_DUTY_CYCLE        20   // In Percent
+#define FAN_DUTY_CYCLE_INCREMENT  10   // In Percent
+#define FAN_UPDATE_COUNTER        10 * 1000000 / MAIN_LOOP_INTERVAL  // Number of times through the main loop before updating the fan speed every 10 seconds
 
 esp_timer_handle_t main_loop_timer = nullptr;
 volatile bool updateFlag = false; // Flag to indicate timer fired
+
+int fanUpdateCounter = 0; // Counter to track fan speed updates
 
 // Timer interrupt handler function
 void IRAM_ATTR onMainLoopTimer(void* arg) {
@@ -37,8 +42,8 @@ void setupMainLoopTimer()
   // Initialize the timer
   esp_timer_create(&timer_args, &main_loop_timer);
 
-  // Start the timer to trigger every 1/4 second (250,000 microseconds)
-  esp_timer_start_periodic(main_loop_timer, 250000); // 1/4 second interval
+  // Start the timer to trigger every 1/2 second (500,000 microseconds)
+  esp_timer_start_periodic(main_loop_timer, MAIN_LOOP_INTERVAL); 
 }
 
 void setup()
@@ -65,6 +70,8 @@ void setup()
   SetupRotaryEncoder();
   Slog.printf("SetupSSR()\r\n");
   SetupSSR();
+  Slog.printf("SetupThermo()\r\n"); 
+  SetupThermo();
   Slog.printf("SetupPushButton()\r\n");
   SetupPushButton();
   Slog.printf("SetupBuzzer()\r\n");
@@ -83,26 +90,29 @@ void loop()
 
   if (updateFlag) {
     updateFlag = false;
-    int rpm = GetFanRPM();
-    float temperature = GetThermocoupleTemperature();
-    long rotaryValue = GetRotaryEncoderValue(); // Read the rotary encoder value  
-    UpdateDisplay(rpm, dutyCycle, temperature, rotaryValue); // Update the LCD display
-    UpdateTFT(); // Update the TFT display
 
-    dutyCycle += dutyCycleIncrement;
-    if (dutyCycle > MAX_FAN_DUTY_CYCLE) {
-      dutyCycleIncrement = -FAN_DUTY_CYCLE_INCREMENT;
-      dutyCycle = MAX_FAN_DUTY_CYCLE;  // Fan at full speed
-      Buzz(); // Buzz the buzzer when the fan speed changes
-    } else if (dutyCycle < MIN_FAN_DUTY_CYCLE) {
-      dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT; // Fan at minimum speed   
-      dutyCycle = MIN_FAN_DUTY_CYCLE;
-      Buzz(); // Buzz the buzzer when the fan speed changes
-    }
-    SetFanDutyCycle(dutyCycle);
-    //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
-    bool pushButtonState = GetPushButtonState(); // Read the push button state
+    float temperature = GetThermocoupleTemperature();
+    long rotaryValue = GetRotaryEncoderValue(); // Read the rotary encoder value 
+    bool pushButtonState = GetPushButtonState(); // Read the push button state 
     SetSSRState(pushButtonState); // Set the SSR state based on the push button state
-    Slog.printf(PSTR(">Temperature1:%.1f,State:%d\r\n"), temperature, pushButtonState);
+
+    if (++fanUpdateCounter >= FAN_UPDATE_COUNTER) {
+      fanUpdateCounter = 0; // Reset the counter
+      if (dutyCycle >= MAX_FAN_DUTY_CYCLE) {
+        dutyCycleIncrement = -FAN_DUTY_CYCLE_INCREMENT;
+        Buzz(); // Buzz the buzzer when the fan speed starts to decrease
+      }
+      else if (dutyCycle <= MIN_FAN_DUTY_CYCLE) {
+        dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT; // Fan at minimum speed   
+        Buzz(); // Buzz the buzzer when the fan speed starts to increase
+      }
+      dutyCycle += dutyCycleIncrement;
+      SetFanDutyCycle(dutyCycle);
+    }
+    int rpm = GetFanRPM();
+    UpdateDisplay(rpm, dutyCycle, temperature, rotaryValue); // Update the LCD display
+    UpdateTFT(temperature, 250); // Update the TFT display
+    //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
+    //Slog.printf(PSTR(">Temperature1:%.1f\r\n"), temperature);
   }
 }

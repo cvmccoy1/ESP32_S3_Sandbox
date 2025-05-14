@@ -17,12 +17,18 @@ void SetupSSR()
 
 void SetSSRState(bool state)
 {
-    // Set the SSR state (on or off)
-    if (state) {
-        digitalWrite(SSR_PIN, SSR_ON);  // Turn on the SSR
-        //Slog.printf(PSTR("SSR is ON\r\n"));
-    } else {
-        digitalWrite(SSR_PIN, SSR_OFF); // Turn off the SSR
-        //Slog.printf(PSTR("SSR is OFF\r\n"));
+    static bool lastState = false; // Variable to store the last state of the SSR
+    if (state != lastState) {
+        // Set the SSR state (on or off)
+        if (state) {
+            digitalWrite(SSR_PIN, SSR_ON);  // Turn on the SSR
+            //Slog.printf(PSTR("SSR is ON\r\n"));
+        } else {
+            digitalWrite(SSR_PIN, SSR_OFF); // Turn off the SSR
+            //Slog.printf(PSTR("SSR is OFF\r\n"));
+        }
+
+        lastState = state; // Update the last state variable
+        Slog.printf(PSTR("SSR state changed to %s\r\n"), state ? "ON" : "OFF");
     }
 }

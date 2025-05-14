@@ -11,9 +11,10 @@
 #define PCNT_INPUT_SIG_IO  FAN_TACH_PIN  // Pulse Input GPIO
 
 #define FAN_PWM_PIN 5   // Connect to the fan's PWM pin (Blue wire)
-#define PWM_CHANNEL 0   // LEDC channel
+#define PWM_CHANNEL 2   // LEDC channel (Channel 2 uses LEDC_TIMER_1 by default)
 #define PWM_FREQ 25000  // 25 kHz frequency
-#define PWM_RES 8       // 8-bit resolution (0-255)
+#define PWM_RES_BITS 8  // 8-bit resolution (0-255)
+#define PWM_RES_MAX  (1 << PWM_RES_BITS) - 1 // Maximum value for resolution
 
 #define FAN_TACH_TIMER     0    // H/W Timer for reading the fan tachometer
 
@@ -41,7 +42,7 @@ pcnt_config_t pcnt_config = {
 void SetupFan()
 {
     // Configure the fan PWM pin
-    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
+    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES_BITS);
     ledcAttachPin(FAN_PWM_PIN, PWM_CHANNEL);
   
     // Set initial fan speed to off (0%)
@@ -71,6 +72,7 @@ int GetFanRPM()
 
 void SetFanDutyCycle(int dutyCycle)
 {
-    ledcWrite(PWM_CHANNEL, map(dutyCycle, 0, 100, 0, 255));
+    long mappedDutyCycle = map(dutyCycle, 0, 100, 0, PWM_RES_MAX);
+    ledcWrite(PWM_CHANNEL, mappedDutyCycle);
+    //Slog.printf(PSTR("SetFanDutyCycle(): dutyCycle = %d, mappedDutyCycle = %d\r\n"), dutyCycle, mappedDutyCycle);
 }
-

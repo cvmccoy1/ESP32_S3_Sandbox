@@ -1,4 +1,4 @@
 #pragma once
 
 void SetupTFT(void);
-void UpdateTFT(void);
+void UpdateTFT(float temp, float setpoint);

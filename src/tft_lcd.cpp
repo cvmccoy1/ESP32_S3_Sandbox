@@ -1,218 +1,118 @@
-/*
- An example analogue meter using a ILI9341 TFT LCD screen
-
- Needs Font 2 (also Font 4 if using large scale label)
-
- Make sure all the display driver and pin connections are correct by
- editing the User_Setup.h file in the TFT_eSPI library folder.
-
- #########################################################################
- ###### DON'T FORGET TO UPDATE THE User_Setup.h FILE IN THE LIBRARY ######
- #########################################################################
- 
-Updated by Bodmer for variable meter size
- */
-
-
-// Define meter size as 1 for tft.rotation(0) or 1.3333 for tft.rotation(1)
-#define M_SIZE 1.3333
 #include <Arduino.h>
-#include <TFT_eSPI.h> // Hardware-specific library
+#include <TFT_eSPI.h> 
 #include <SPI.h>
 #include "log.h"
 
+#define GRAPH_WIDTH  320
+#define GRAPH_HEIGHT 100
+#define GRAPH_X      0
+#define GRAPH_Y      140
+
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
-#define TFT_GREY 0x5AEB
+uint16_t graphPos = 0;
+float lastTempY = 0, lastSetpointY = 0;
+float graphMin = 0, graphMax = 250;
 
-float ltx = 0;    // Saved x coord of bottom of needle
-uint16_t osx = M_SIZE*120, osy = M_SIZE*120; // Saved x & y coords
+enum ReflowStage {PREHEAT, SOAK, REFLOW, COOLING, COMPLETE};
+ReflowStage currentStage = PREHEAT;
 
-int old_analog =  -999; // Value last displayed
+void drawGraphFrame();
+void updateInfoPanel(double temp, double setpoint, bool heating, ReflowStage stage, int countdown);
+void updateGraph(float temp, float setpoint);
 
-int value[6] = {0, 0, 0, 0, 0, 0};
-int old_value[6] = { -1, -1, -1, -1, -1, -1};
-int d = 0;
-
-void plotNeedle(int value, byte ms_delay);
-
-// #########################################################################
-//  Draw the analogue meter on the screen
-// #########################################################################
-void analogMeter()
+void SetupTFT(void) 
 {
-
-  // Meter outline
-  tft.fillRect(0, 0, M_SIZE*239, M_SIZE*126, TFT_GREY);
-  tft.fillRect(5, 3, M_SIZE*230, M_SIZE*119, TFT_WHITE);
-
-  tft.setTextColor(TFT_BLACK);  // Text colour
-
-  // Draw ticks every 5 degrees from -50 to +50 degrees (100 deg. FSD swing)
-  for (int i = -50; i < 51; i += 5) {
-    // Long scale tick length
-    int tl = 15;
-
-    // Coordinates of tick to draw
-    float sx = cos((i - 90) * 0.0174532925);
-    float sy = sin((i - 90) * 0.0174532925);
-    uint16_t x0 = sx * (M_SIZE*100 + tl) + M_SIZE*120;
-    uint16_t y0 = sy * (M_SIZE*100 + tl) + M_SIZE*140;
-    uint16_t x1 = sx * M_SIZE*100 + M_SIZE*120;
-    uint16_t y1 = sy * M_SIZE*100 + M_SIZE*140;
-
-    // Coordinates of next tick for zone fill
-    float sx2 = cos((i + 5 - 90) * 0.0174532925);
-    float sy2 = sin((i + 5 - 90) * 0.0174532925);
-    int x2 = sx2 * (M_SIZE*100 + tl) + M_SIZE*120;
-    int y2 = sy2 * (M_SIZE*100 + tl) + M_SIZE*140;
-    int x3 = sx2 * M_SIZE*100 + M_SIZE*120;
-    int y3 = sy2 * M_SIZE*100 + M_SIZE*140;
-
-    // Yellow zone limits
-    if (i >= -50 && i < 0) {
-      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_YELLOW);
-      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_YELLOW);
-    }
-
-    // Green zone limits
-    if (i >= 0 && i < 25) {
-      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_GREEN);
-      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_GREEN);
-    }
-
-    // Orange zone limits
-    if (i >= 25 && i < 50) {
-      tft.fillTriangle(x0, y0, x1, y1, x2, y2, TFT_RED);
-      tft.fillTriangle(x1, y1, x2, y2, x3, y3, TFT_RED);
-    }
-
-    // Short scale tick length
-    if (i % 25 != 0) tl = 8;
-
-    // Recalculate coords incase tick lenght changed
-    x0 = sx * (M_SIZE*100 + tl) + M_SIZE*120;
-    y0 = sy * (M_SIZE*100 + tl) + M_SIZE*140;
-    x1 = sx * M_SIZE*100 + M_SIZE*120;
-    y1 = sy * M_SIZE*100 + M_SIZE*140;
-
-    // Draw tick
-    tft.drawLine(x0, y0, x1, y1, TFT_BLACK);
-
-    // Check if labels should be drawn, with position tweaks
-    if (i % 25 == 0) {
-      // Calculate label positions
-      x0 = sx * (M_SIZE*100 + tl + 10) + M_SIZE*120;
-      y0 = sy * (M_SIZE*100 + tl + 10) + M_SIZE*140;
-      switch (i / 25) {
-        case -2: tft.drawCentreString("0", x0, y0 - 12, 2); break;
-        case -1: tft.drawCentreString("25", x0, y0 - 9, 2); break;
-        case 0: tft.drawCentreString("50", x0, y0 - 7, 2); break;
-        case 1: tft.drawCentreString("75", x0, y0 - 9, 2); break;
-        case 2: tft.drawCentreString("100", x0, y0 - 12, 2); break;
-      }
-    }
-
-    // Now draw the arc of the scale
-    sx = cos((i + 5 - 90) * 0.0174532925);
-    sy = sin((i + 5 - 90) * 0.0174532925);
-    x0 = sx * M_SIZE*100 + M_SIZE*120;
-    y0 = sy * M_SIZE*100 + M_SIZE*140;
-    // Draw scale arc, don't draw the last part
-    if (i < 50) tft.drawLine(x0, y0, x1, y1, TFT_BLACK);
-  }
-
-  tft.drawString("%RH", M_SIZE*(5 + 230 - 40), M_SIZE*(119 - 20), 2); // Units at bottom right
-  tft.drawCentreString("%RH", M_SIZE*120, M_SIZE*70, 4); // Comment out to avoid font 4
-  tft.drawRect(5, 3, M_SIZE*230, M_SIZE*119, TFT_BLACK); // Draw bezel line
-
-  plotNeedle(0, 0); // Put meter needle at 0
-}
-
-// #########################################################################
-// Update needle position
-// This function is blocking while needle moves, time depends on ms_delay
-// 10ms minimises needle flicker if text is drawn within needle sweep area
-// Smaller values OK if text not in sweep area, zero for instant movement but
-// does not look realistic... (note: 100 increments for full scale deflection)
-// #########################################################################
-void plotNeedle(int value, byte ms_delay)
-{
-  tft.setTextColor(TFT_BLACK, TFT_WHITE);
-  char buf[8]; dtostrf(value, 4, 0, buf);
-  tft.drawRightString(buf, M_SIZE*40, M_SIZE*(119 - 20), 2);
-
-  if (value < -10) value = -10; // Limit value to emulate needle end stops
-  if (value > 110) value = 110;
-
-  // Move the needle until new value reached
-  while (!(value == old_analog)) {
-    if (old_analog < value) old_analog++;
-    else old_analog--;
-
-    if (ms_delay == 0) old_analog = value; // Update immediately if delay is 0
-
-    float sdeg = map(old_analog, -10, 110, -150, -30); // Map value to angle
-    // Calculate tip of needle coords
-    float sx = cos(sdeg * 0.0174532925);
-    float sy = sin(sdeg * 0.0174532925);
-
-    // Calculate x delta of needle start (does not start at pivot point)
-    float tx = tan((sdeg + 90) * 0.0174532925);
-
-    // Erase old needle image
-    tft.drawLine(M_SIZE*(120 + 20 * ltx - 1), M_SIZE*(140 - 20), osx - 1, osy, TFT_WHITE);
-    tft.drawLine(M_SIZE*(120 + 20 * ltx), M_SIZE*(140 - 20), osx, osy, TFT_WHITE);
-    tft.drawLine(M_SIZE*(120 + 20 * ltx + 1), M_SIZE*(140 - 20), osx + 1, osy, TFT_WHITE);
-
-    // Re-plot text under needle
-    tft.setTextColor(TFT_BLACK);
-    tft.drawCentreString("%RH", M_SIZE*120, M_SIZE*70, 4); // // Comment out to avoid font 4
-
-    // Store new needle end coords for next erase
-    ltx = tx;
-    osx = M_SIZE*(sx * 98 + 120);
-    osy = M_SIZE*(sy * 98 + 140);
-
-    // Draw the needle in the new postion, magenta makes needle a bit bolder
-    // draws 3 lines to thicken needle
-    tft.drawLine(M_SIZE*(120 + 20 * ltx - 1), M_SIZE*(140 - 20), osx - 1, osy, TFT_RED);
-    tft.drawLine(M_SIZE*(120 + 20 * ltx), M_SIZE*(140 - 20), osx, osy, TFT_MAGENTA);
-    tft.drawLine(M_SIZE*(120 + 20 * ltx + 1), M_SIZE*(140 - 20), osx + 1, osy, TFT_RED);
-
-    // Slow needle down slightly as it approaches new postion
-    if (abs(old_analog - value) < 10) ms_delay += ms_delay / 5;
-
-    // Wait before next update
-    delay(ms_delay);
-  }
-}
-
-
-void SetupTFT(void) {
-  Slog.printf("tft.init()\r\n");
   tft.init();
+  //tft.setSwapBytes(true); // Set to true for ESP32, false for ESP8266 
 
-  Slog.printf("tft.setWindow()\r\n");
-  tft.setWindow(0, 0, 240, 320); // Set window size to full screen
+  //tft.setWindow(0, 0, 240, 320); // Set window size to full screen
 
-  Slog.printf("tft.setRotation()\r\n");
+  //Slog.printf("tft.setRotation()\r\n");
   tft.setRotation(1); // Set rotation to 1 for landscape mode
 
-  // Clear the screen
-  Slog.printf("tft.fillScreen()\r\n");
+  //Slog.printf("tft.fillScreen()\r\n");
   tft.fillScreen(TFT_BLACK);
- 
-  Slog.printf("analogMeter()\r\n");
-  analogMeter(); // Draw analogue meter
+
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextSize(2);
+
+  tft.setCursor(10, 10);
+  tft.println("Reflow Controller");
+
+  drawGraphFrame();
 }
   
   
-void UpdateTFT() {
+void UpdateTFT(float temp, float setpoint)
+{
+  updateInfoPanel(temp, setpoint, true, currentStage, 300);
+  updateGraph(temp, setpoint);
+}
 
-  // Create a Sine wave for testing
-  d += 4; if (d >= 360) d = 0;
-  value[0] = 50 + 50 * sin((d + 0) * 0.0174532925);
-  
-  plotNeedle(value[0], 0); // It takes between 2 and 12ms to replot the needle with zero delay
+void drawGraphFrame() 
+{
+  tft.drawRect(GRAPH_X, GRAPH_Y, GRAPH_WIDTH, GRAPH_HEIGHT, TFT_WHITE);
+
+  for (int i = 0; i <= 5; i++) 
+  {
+    int y = GRAPH_Y + GRAPH_HEIGHT - (i * GRAPH_HEIGHT / 5);
+    tft.drawFastHLine(GRAPH_X, y, GRAPH_WIDTH, TFT_DARKGREY);
+    tft.setCursor(0, y - 8);
+    float tempVal = graphMin + (i * (graphMax - graphMin) / 5);
+    tft.printf("%.0f", tempVal);
+  }
+}
+
+void updateInfoPanel(double temp, double setpoint, bool heating, ReflowStage stage, int countdown) 
+{
+  tft.fillRect(0, 40, 320, 20, TFT_BLACK);
+  tft.setCursor(10, 40);
+  tft.printf("Temp: %.1f  Set: %.1f ", temp, setpoint);
+
+  tft.fillRect(0, 60, 320, 20, TFT_BLACK);
+  tft.setCursor(10, 60);
+  tft.print("Stage: ");
+  switch (stage) {
+    case PREHEAT: tft.print("PREHEAT"); break;
+    case SOAK:    tft.print("SOAK"); break;
+    case REFLOW:  tft.print("REFLOW"); break;
+    case COOLING: tft.print("COOLING"); break;
+    case COMPLETE:tft.print("COMPLETE"); break;
+  }
+
+  tft.fillRect(0, 80, 320, 20, TFT_BLACK);
+  tft.setCursor(10, 80);
+  tft.printf("Time Left: %ds", countdown);
+}
+
+void updateGraph(float temp, float setpoint) {
+  if (temp < graphMin || temp > graphMax || setpoint > graphMax || setpoint < graphMin) 
+  {
+    graphMin = min(graphMin, min(temp, setpoint)) - 5;
+    graphMax = max(graphMax, max(temp, setpoint)) + 5;
+    tft.fillRect(GRAPH_X + 1, GRAPH_Y + 1, GRAPH_WIDTH - 2, GRAPH_HEIGHT - 2, TFT_BLACK);
+    drawGraphFrame();
+    graphPos = 0;
+    lastTempY = lastSetpointY = GRAPH_Y + GRAPH_HEIGHT;
+    return;
+  }
+
+  int tempY = GRAPH_Y + GRAPH_HEIGHT - map(temp, graphMin, graphMax, 0, GRAPH_HEIGHT);
+  int setY  = GRAPH_Y + GRAPH_HEIGHT - map(setpoint, graphMin, graphMax, 0, GRAPH_HEIGHT);
+
+  if (graphPos > 0 && graphPos < GRAPH_WIDTH) {
+    tft.drawLine(GRAPH_X + graphPos - 1, lastTempY, GRAPH_X + graphPos, tempY, TFT_RED);
+    tft.drawLine(GRAPH_X + graphPos - 1, lastSetpointY, GRAPH_X + graphPos, setY, TFT_BLUE);
+  }
+
+  lastTempY = tempY;
+  lastSetpointY = setY;
+  graphPos++;
+
+  if (graphPos >= GRAPH_WIDTH) {
+    graphPos = 0;
+    tft.fillRect(GRAPH_X + 1, GRAPH_Y + 1, GRAPH_WIDTH - 2, GRAPH_HEIGHT - 2, TFT_BLACK);
+    drawGraphFrame();
+  }
 }
