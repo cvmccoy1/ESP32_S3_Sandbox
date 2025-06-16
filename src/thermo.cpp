@@ -38,9 +38,8 @@ float GetThermocoupleTemperature()
  
     // Select the MAX6675
     digitalWrite(SPI_CS, LOW);
-    //delayMicroseconds(10);  // Allow time for the chip to respond
 
-    // Read 2 bytes of data from the MAX6675
+    // Read a word of data from the MAX6675
     uint16_t value = SPIbus.transfer16(0x00);
 
     // Deselect the MAX6675
@@ -49,17 +48,16 @@ float GetThermocoupleTemperature()
 
     //Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): raw value = 0x%04X\r\n"), value);
     // Check for fault (bit 2 is set if there is a fault)
-    // The MAX6675 returns a 12-bit temperature value in the upper 12 bits of the 16-bit value
-    // The lower 4 bits are not used
     if (value & 0x4) {
         Slog.printf(PSTR("Thermocouple Error\r\n"));
         return NAN;  // Return NaN if there is an error
     }
 
+    // The MAX6675 returns a 12-bit temperature value in bits 3-14 of the 16-bit word. Bit 15 is always 0 and bit 0-2 are removed.
     // Convert to Celsius (the MAX6675 returns temperature in degrees Celsius)
     temperature = value >> 3;  // Shift right to remove the fault bit and convert to Celsius
     //Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): raw temperature = 0x%04X\r\n"), (int)temperature);
-    temperature *= 0.25;       // Scale to get the actual temperature
+    temperature *= 0.25;       // Scale to get the actual temperature to the nearest 0.25 degrees Celsius
 
     Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): Temperature = %.2f\r\n"), temperature);
     

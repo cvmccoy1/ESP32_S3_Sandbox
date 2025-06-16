@@ -16,4 +16,7 @@ private:
     // Private constructor/destructor ensures that this Singleton class can only be created/destroyed inside the class
     Heartbeat();
     ~Heartbeat();
+
+    int colorState;
+    esp_timer_handle_t heatbeat_timer;
 };

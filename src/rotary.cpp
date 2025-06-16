@@ -10,7 +10,25 @@
 #define  DI_ENCODER_CLK        16   // Might be labeled B
 #define  DI_ENCODER_WRAP       true // Wrap around when turning the knob past the min/max values
 
+
+// A button-press is considered "long" if
+// it's held for more than two seconds
+#define LONG_PRESS 2 * 1000
+
+volatile bool rotaryEncoderButtonPressed = false;
+
 RotaryEncoder rotaryEncoder(DI_ENCODER_DT, DI_ENCODER_CLK, DI_ENCODER_SW);
+
+void buttonShortPress()
+{
+	Slog.printf(PSTR("boop!\r\n"));
+    rotaryEncoderButtonPressed = true; // Set the flag to indicate button press
+}
+
+void buttonLongPress()
+{
+	Slog.printf(PSTR("BOOOOOOOOOOP!\r\n"));
+}
 
 void knobCallback(long value)
 {
@@ -23,6 +41,14 @@ void buttonCallback(unsigned long duration)
 {
     // This gets executed every time the pushbutton is pressed
     Slog.printf(PSTR("boop! button was down for %u ms\r\n"), duration );
+    	if (duration > LONG_PRESS)
+	{
+		buttonLongPress();
+	}
+	else
+	{
+		buttonShortPress();
+	}
 }
 
 void SetupRotaryEncoder()
@@ -50,4 +76,13 @@ long GetRotaryEncoderValue()
 {
     // This returns the current value of the rotary encoder
     return rotaryEncoder.getEncoderValue();
-}   
+} 
+
+bool GetRotaryPushButtonState()
+{
+    // This returns the state of the pushbutton
+    // and resets the flag after reading it
+    bool buttonPressed = rotaryEncoderButtonPressed;
+    rotaryEncoderButtonPressed = false; // Reset the flag
+    return buttonPressed;
+}

@@ -8,7 +8,8 @@
 #include "thermo.h"
 #include "rotary.h"
 #include "ssr.h"
-#include "push_button.h"
+#include "rgb_led.h"
+//#include "push_button.h"
 #include "tft_lcd.h"
 #include "buzzer.h"
 #include "utilities.h"
@@ -72,8 +73,8 @@ void setup()
   SetupSSR();
   Slog.printf("SetupThermo()\r\n"); 
   SetupThermo();
-  Slog.printf("SetupPushButton()\r\n");
-  SetupPushButton();
+  //Slog.printf("SetupPushButton()\r\n");
+  //SetupPushButton();
   Slog.printf("SetupBuzzer()\r\n");
   SetupBuzzer();
   Slog.printf("SetupSecondaryCore()\r\n");
@@ -86,15 +87,33 @@ void setup()
 void loop()
 { 
   static int dutyCycle = MIN_FAN_DUTY_CYCLE;
-  static int dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT;   
+  static int dutyCycleIncrement = FAN_DUTY_CYCLE_INCREMENT;
+  static bool isOn = false;
 
   if (updateFlag) {
     updateFlag = false;
 
     float temperature = GetThermocoupleTemperature();
     long rotaryValue = GetRotaryEncoderValue(); // Read the rotary encoder value 
-    bool pushButtonState = GetPushButtonState(); // Read the push button state 
-    SetSSRState(pushButtonState); // Set the SSR state based on the push button state
+    bool pushButtonState = GetRotaryPushButtonState();  //GetPushButtonState(); // Read the push button state
+    if (pushButtonState) {
+      // If the push button is pressed, toggle the isOn state
+      isOn = !isOn;
+      SetRGBLEDColor(ON_OFF_LED_INDEX, isOn ? COLOR_GREEN : COLOR_OFF); // Set the RGB LED color based on the isOn state
+      SetSSRState(isOn); // Set the SSR state based on the isOn state
+    }
+    if (temperature < 30.0f) {
+      SetRGBLEDColor(TEMP_LED_INDEX, COLOR_BLUE); // Set the RGB LED to blue for low temperature
+    }
+    else if (temperature < 50.0f) {
+      SetRGBLEDColor(TEMP_LED_INDEX, COLOR_GREEN); // Set the RGB LED to green for moderate temperature
+    }
+    else if (temperature < 70.0f) {
+      SetRGBLEDColor(TEMP_LED_INDEX, COLOR_YELLOW); // Set the RGB LED to yellow for high temperature
+    }
+    else {
+      SetRGBLEDColor(TEMP_LED_INDEX, COLOR_RED); // Set the RGB LED to red for very high temperature
+    }
 
     if (++fanUpdateCounter >= FAN_UPDATE_COUNTER) {
       fanUpdateCounter = 0; // Reset the counter
