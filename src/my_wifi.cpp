@@ -26,6 +26,7 @@ void SetupWifi()
   //WiFiManager local intialization. Once its business is done, there is no need to keep it around
   Slog.println(PSTR("[Wifi]: WiFiManager local intialization"));
   WiFiManager wm;
+  wm.setTimeout(30); // 30 second timeout to avoid blocking indefinitely
    
   // Reset settings - wipe stored credentials for testing - these are stored by the esp library
   //wm.resetSettings();

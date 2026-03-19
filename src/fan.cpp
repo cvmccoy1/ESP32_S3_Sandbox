@@ -19,6 +19,7 @@
 #define FAN_TACH_TIMER     0    // H/W Timer for reading the fan tachometer
 
 volatile int16_t pulseCount = 0;   // Tachometer pulse counter
+static portMUX_TYPE fanMux = portMUX_INITIALIZER_UNLOCKED;
 hw_timer_t *timer = NULL;          // Timer for RPM calculation
 
 void IRAM_ATTR timerISR() {
@@ -67,7 +68,10 @@ void SetupFan()
 
 int GetFanRPM()
 {
-    return pulseCount * 60 / 2;  // 2 pulses per revolution
+    portENTER_CRITICAL(&fanMux);
+    int16_t count = pulseCount;
+    portEXIT_CRITICAL(&fanMux);
+    return count * 60 / 2;  // 2 pulses per revolution
 }
 
 void SetFanDutyCycle(int dutyCycle)

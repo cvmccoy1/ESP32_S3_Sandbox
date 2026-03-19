@@ -17,6 +17,6 @@ private:
     Heartbeat();
     ~Heartbeat();
 
-    int colorState;
+    volatile int colorState;
     esp_timer_handle_t heatbeat_timer;
 };

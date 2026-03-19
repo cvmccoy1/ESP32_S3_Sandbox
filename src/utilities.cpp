@@ -104,7 +104,7 @@ void FindI2CDevices()
       nDevices++;
     }
     else if (error==4) {
-      Slog.print(PSTR("Unknow error at address 0x"));
+      Slog.print(PSTR("Unknown error at address 0x"));
       if (address<16) {
         Slog.print(PSTR("0"));
       }

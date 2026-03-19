@@ -16,6 +16,7 @@
 #define LONG_PRESS 2 * 1000
 
 volatile bool rotaryEncoderButtonPressed = false;
+static portMUX_TYPE rotaryMux = portMUX_INITIALIZER_UNLOCKED;
 
 RotaryEncoder rotaryEncoder(DI_ENCODER_DT, DI_ENCODER_CLK, DI_ENCODER_SW);
 
@@ -82,7 +83,9 @@ bool GetRotaryPushButtonState()
 {
     // This returns the state of the pushbutton
     // and resets the flag after reading it
+    taskENTER_CRITICAL(&rotaryMux);
     bool buttonPressed = rotaryEncoderButtonPressed;
     rotaryEncoderButtonPressed = false; // Reset the flag
+    taskEXIT_CRITICAL(&rotaryMux);
     return buttonPressed;
 }

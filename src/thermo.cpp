@@ -59,8 +59,8 @@ float GetThermocoupleTemperature()
     //Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): raw temperature = 0x%04X\r\n"), (int)temperature);
     temperature *= 0.25;       // Scale to get the actual temperature to the nearest 0.25 degrees Celsius
 
-    Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): Temperature = %.2f\r\n"), temperature);
-    
+    // Slog.printf(PSTR("GetThermocoupleTemperature([h/w]): Temperature = %.2f\r\n"), temperature);
+
     return temperature;
 }
 #else  // Use bit-banged SPI (Software SPI) for MAX6675
@@ -76,7 +76,7 @@ float GetThermocoupleTemperature()
 {
     // Read temperature from the thermocouple
     float temperature = thermocouple.readCelsius(); // Read temperature in Celsius
-    Slog.printf(PSTR("GetThermocoupleTemperature([s/w]): Temperature = %.2f\r\n"), temperature);
+    // Slog.printf(PSTR("GetThermocoupleTemperature([s/w]): Temperature = %.2f\r\n"), temperature);
     return temperature;
 }
 

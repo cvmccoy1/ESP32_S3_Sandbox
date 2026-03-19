@@ -112,7 +112,7 @@ void updateGraph(float temp, float setpoint) {
 
   if (graphPos >= GRAPH_WIDTH) {
     graphPos = 0;
-    tft.fillRect(GRAPH_X + 1, GRAPH_Y + 1, GRAPH_WIDTH - 2, GRAPH_HEIGHT - 2, TFT_BLACK);
-    drawGraphFrame();
+    // Don't clear - new line will overwrite old pixels. Only clear and redraw
+    // frame on first call or when graphMin/graphMax change (handled separately).
   }
 }

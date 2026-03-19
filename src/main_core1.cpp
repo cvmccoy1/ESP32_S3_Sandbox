@@ -31,7 +31,7 @@ void StartSecondaryCore()
 void IRAM_ATTR secondaryTask(void *parameter)
 {
   setupTask();
-  while(true) 
+  while(true)
   {
     loopTask();
   }
@@ -48,5 +48,6 @@ void setupTask()
 // Loop Function for Secondary Core - Add Execution code for here
 void loopTask()
 {
-  //Slog.println(PSTR("Running on Secondary Core)");
+  //Slog.println(PSTR("Running on Secondary Core"));
+  vTaskDelay(pdMS_TO_TICKS(100));
 }

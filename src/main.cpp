@@ -23,6 +23,7 @@
 
 esp_timer_handle_t main_loop_timer = nullptr;
 volatile bool updateFlag = false; // Flag to indicate timer fired
+static portMUX_TYPE mainLoopMux = portMUX_INITIALIZER_UNLOCKED;
 
 int fanUpdateCounter = 0; // Counter to track fan speed updates
 
@@ -91,7 +92,9 @@ void loop()
   static bool isOn = false;
 
   if (updateFlag) {
+    taskENTER_CRITICAL(&mainLoopMux);
     updateFlag = false;
+    taskEXIT_CRITICAL(&mainLoopMux);
 
     float temperature = GetThermocoupleTemperature();
     long rotaryValue = GetRotaryEncoderValue(); // Read the rotary encoder value 
