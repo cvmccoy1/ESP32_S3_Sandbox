@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pio run:*)",
+      "Bash(where pio:*)",
+      "Read(//c/git/ESP32_S3_Sandbox/$HOME/.platformio/penv/**)",
+      "Read(//c/git/ESP32_S3_Sandbox/$USERPROFILE/.platformio/penv/**)",
+      "Bash(\"$HOME/.platformio/penv/Scripts/pio.exe\" run:*)"
+    ]
+  }
+}
