@@ -3,6 +3,7 @@
 #include "log.h"
 #include "main_core1.h"
 #include "my_wifi.h"
+#include "web_server.h"
 #include "lcd.h"
 #include "fan.h"
 #include "thermo.h"
@@ -68,6 +69,8 @@ void setup()
   SetupFan();
   Slog.printf("SetupWifi()\r\n");
   SetupWifi();
+  Slog.printf("SetupWebServer()\r\n");
+  SetupWebServer();
   Slog.printf("SetupRotaryEncoder()\r\n");
   SetupRotaryEncoder();
   Slog.printf("SetupSSR()\r\n");
@@ -134,6 +137,7 @@ void loop()
     int rpm = GetFanRPM();
     UpdateDisplay(rpm, dutyCycle, temperature, rotaryValue); // Update the LCD display
     UpdateTFT(temperature, 250); // Update the TFT display
+    UpdateWebServer(temperature, dutyCycle, rpm, isOn, "IDLE");
     //Slog.printf(PSTR(">Fan_RPM:%d,Duty_Cycle:%d\r\n"), rpm, dutyCycle);
     //Slog.printf(PSTR(">Temperature1:%.1f\r\n"), temperature);
   }

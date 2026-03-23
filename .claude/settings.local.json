@@ -5,7 +5,14 @@
       "Bash(where pio:*)",
       "Read(//c/git/ESP32_S3_Sandbox/$HOME/.platformio/penv/**)",
       "Read(//c/git/ESP32_S3_Sandbox/$USERPROFILE/.platformio/penv/**)",
-      "Bash(\"$HOME/.platformio/penv/Scripts/pio.exe\" run:*)"
+      "Bash(\"$HOME/.platformio/penv/Scripts/pio.exe\" run:*)",
+      "Bash(platformio run:*)",
+      "Bash(where platformio:*)",
+      "Bash(C:/Users/cvmcc/.platformio/penv/Scripts/platformio.exe run:*)",
+      "Bash(C:/Users/cvmcc/.platformio/penv/Scripts/platformio.exe lib:*)",
+      "Bash(find ~/.platformio/lib/ESPAsyncWebServer* -name *.h)",
+      "Bash(find /c/Users/cvmcc/.platformio/lib -maxdepth 2 -name *.h)",
+      "Bash(find 'C:/git/ESP32_S3_Sandbox/.pio/libdeps/esp32-s3-devkitc-1/ESP Async WebServer' -name *.h)"
     ]
   }
 }
